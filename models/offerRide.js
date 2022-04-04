@@ -33,6 +33,10 @@ const offerRide = new mongoose.Schema({
     type: String,
     required: true,
   },
+  amount: {
+    type: String,
+    required: true,
+  },
   cloudinary_id: {
     type: String,
     required: true,

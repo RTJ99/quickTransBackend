@@ -19,7 +19,9 @@ router.post("/", upload.single("image"), async (req, res) => {
       car: req.body.car,
       drop_off_location: req.body.drop_off_location,
       date: req.body.date,
+      amount: req.body.amount,
     });
+    console.log(offerRide);
     // Save offerRide
     await offerRide.save();
     res.json(offerRide);
