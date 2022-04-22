@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
-const SearchRide = require("../models/searchRide");
+const SearchRide = require("../models/offerRide");
 
 router.post("/", upload.single("image"), async (req, res) => {
   try {
@@ -76,6 +76,11 @@ router.get("/:id", async (req, res) => {
   } catch (err) {
     console.log(err);
   }
+});
+router.get("/search", async (req, res) => {
+  let { pickup_point, drop_off_location } = req.query;
+  let data = await SearchRide.find({ pickup_point, drop_off_location });
+  res.send(data);
 });
 
 module.exports = router;

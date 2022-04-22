@@ -7,7 +7,7 @@ const offerRide = new mongoose.Schema({
   },
   date: {
     type: String,
-    required: true,
+    required: false,
   },
   seats: {
     type: Number,
@@ -17,23 +17,73 @@ const offerRide = new mongoose.Schema({
     type: Array,
     required: false,
   },
-  pickup_points: {
-    type: Array,
-    required: false,
+  pickup_point: {
+    type: String,
+    required: true,
   },
   summary: {
     type: String,
     required: false,
   },
-  car: {
+  status: {
+    type: String,
+    required: true,
+  },
+
+  amount: {
+    type: String,
+    required: true,
+  },
+
+  dropOffLat: {
+    type: String,
+    required: true,
+  },
+  pickupLat: {
+    type: String,
+    required: true,
+  },
+  dropOffLng: {
+    type: String,
+    required: true,
+  },
+  pickupLng: {
+    type: String,
+    required: true,
+  },
+  rating: {
+    type: Array,
+    required: false,
+  },
+  passengers: {
+    type: Array,
+    required: false,
+  },
+  plate: {
+    type: String,
+    required: true,
+  },
+  make: {
+    type: String,
+    required: true,
+  },
+  // capacity: {
+  //   type: Number,
+  //   required: true,
+  // },
+  summary: {
+    type: String,
+    required: false,
+  },
+  driver: {
+    type: String,
+    required: true,
+  },
+  driver_pic: {
     type: String,
     required: true,
   },
   picture: {
-    type: String,
-    required: true,
-  },
-  amount: {
     type: String,
     required: true,
   },

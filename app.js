@@ -10,11 +10,13 @@ app.use(cors());
 
 // Route
 app.use("/user", require("./routes/user"));
+// app.use('/login',require("./routes/login"));
 app.use("/car", require("./routes/car"));
 app.use("/offer-ride", require("./routes/offerRide"));
 app.use("/search-ride", require("./routes/searchRide"));
 app.use("tracking", require("./routes/tracking"));
 app.use("/rating", require("./routes/rating"));
+app.use("/seats", require("./routes/bookRide"));
 app.use("/emergency-contact", require("./routes/emergencyContact"));
 
 connectDB();
