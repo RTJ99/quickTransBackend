@@ -21,4 +21,4 @@ app.use("/emergency-contact", require("./routes/emergencyContact"));
 
 connectDB();
 
-app.listen(8080, () => console.log("server started"));
+app.listen(8080, () => console.log("server started "));
