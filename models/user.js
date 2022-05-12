@@ -14,11 +14,15 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
   usuall_check_ins: {
-    type: Array,
+    type: String,
     required: false,
   },
   pickup_points: {
-    type: Array,
+    type: String,
+    required: false,
+  },
+  emergencyContact: {
+    type: String,
     required: false,
   },
   password: {
@@ -28,6 +32,10 @@ const userSchema = new mongoose.Schema({
   address: {
     type: String,
     required: true,
+  },
+  rides: {
+    type: Array,
+    required: false,
   },
   picture: {
     type: String,

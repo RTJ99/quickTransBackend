@@ -22,6 +22,8 @@ router.post("/", upload.single("image"), async (req, res) => {
       phone: req.body.phone,
       usuall_check_ins: req.body.usuall_check_ins,
       pickup_points: req.body.pickup_points,
+      emergencyContact: req.body.emergencyContact,
+
       password: req.body.password,
       address: req.body.address,
     });
@@ -50,7 +52,8 @@ router.post("/login", async (req, res, next) => {
             email: user.email,
             name: user.name,
             phone: user.phone,
-            ussuall_checkins: user.ussuall_check_ins,
+            usuall_check_ins: user.usuall_check_ins,
+            emergencyContact: user.emergencyContact,
             pickup_points: user.pickup_points,
             address: user.address,
             picture: user.picture,

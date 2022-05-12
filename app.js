@@ -9,6 +9,7 @@ app.use(express.json());
 app.use(cors());
 
 // Route
+app.use("/", require("./routes/default"));
 app.use("/user", require("./routes/user"));
 // app.use('/login',require("./routes/login"));
 app.use("/car", require("./routes/car"));

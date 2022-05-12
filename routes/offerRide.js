@@ -4,22 +4,75 @@ const upload = require("../utils/multer");
 const OfferRide = require("../models/offerRide");
 const multer = require("multer");
 const { find } = require("../models/offerRide");
+const User = require("../models/user");
 // const offerRide = require("../models/offerRide");
 
 router.post("/book", async (req, res) => {
-  let offerRide = await OfferRide.findById(req.body.id);
-  console.log(offerRide, "seats");
-  if (offerRide.seats - 1 < 0) {
-    res.status(400).json({ message: "Seats are full" });
-    return;
-  }
-  offerRide.status = offerRide.seats - 1 === 0 ? "unavailable" : "available";
-  offerRide.seats = offerRide.seats - 1;
+  try {
+    let offerRide = await OfferRide.findById(req.body.id);
 
-  offerRide.passengers.push(req.body.passenger);
-  await offerRide.save();
-  res.json(offerRide);
+    console.log(req.body, "seats");
+    const x = offerRide.passengers.find((pas) => pas === req.body.passenger);
+    if (x) {
+      console.log("uutio");
+      res.status(401).json({ message: "You are already in the list" });
+      return;
+    } else {
+      console.log(offerRide, "offerRide");
+      if (offerRide.seats - 1 < 0) {
+        res.status(400).json({ message: "Seats are full" });
+        return;
+      }
+
+      offerRide.status =
+        offerRide.seats - 1 === 0 ? "unavailable" : "available";
+      offerRide.seats = offerRide.seats - 1;
+
+      offerRide.passengers.push(req.body.passenger);
+      offerRide.ID = req.body.id;
+      let logedInUser = await User.findOneAndUpdate(
+        { _id: req.body.userId },
+        { $push: { rides: offerRide } }
+      );
+
+      await offerRide.save();
+      await logedInUser.save();
+      res.json(offerRide);
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err.message });
+  }
 });
+// router.post("/book", async (req, res) => {
+//   try {
+//     let offerRide = await OfferRide.findById(req.body.id);
+//     console.log(req.body, "seats");
+//     const x = offerRide.passengers.find((pas) => pas === req.body.passenger);
+//     if (x) {
+//       console.log("uutio");
+//       res.status(401).json({ message: "You are already in the list" });
+//       return;
+//     } else {
+//       console.log(offerRide, "offerRide");
+//       if (offerRide.seats - 1 < 0) {
+//         res.status(400).json({ message: "Seats are full" });
+//         return;
+//       }
+
+//       offerRide.status =
+//         offerRide.seats - 1 === 0 ? "unavailable" : "available";
+//       offerRide.seats = offerRide.seats - 1;
+
+//       offerRide.passengers.push(req.body.passenger);
+//       await offerRide.save();
+//       res.json(offerRide);
+//     }
+//   } catch (err) {
+//     console.log(err);
+//     res.status(500).json({ message: err.message });
+//   }
+// });
 router.post("/unbook", async (req, res) => {
   let offerRide = await OfferRide.findById(req.body.id);
 
@@ -27,8 +80,18 @@ router.post("/unbook", async (req, res) => {
   offerRide.passengers = offerRide.passengers.filter(
     (id) => id !== req.body.passenger
   );
-  offerRide.passengers.push(req.body.passenger);
+  let logedInUser = await User.findOne({ _id: req.body.userId });
+  await User.updateOne(
+    { _id: req.body.userId },
+    { $pull: { rides: { cloudinary_id: offerRide.cloudinary_id } } }
+  );
+  // console.log(logedInUser.rides[0]._id, "logedInUser");
+  // await logedInUser.rides.pullAll({ cloudinary_id: offerRide.cloudinary_id });
+
+  offerRide.passengers.remove(req.body.passenger);
+
   await offerRide.save();
+  await logedInUser.save();
   res.json(offerRide);
 });
 router.post("/", upload.single("image"), async (req, res) => {
@@ -140,6 +203,7 @@ router.get("/search", async (req, res) => {
   });
   res.send(data);
 });
+
 router.get("/:id", async (req, res) => {
   try {
     // Find offerRide by id
