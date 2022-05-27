@@ -59,6 +59,10 @@ const offerRide = new mongoose.Schema({
     type: Array,
     required: false,
   },
+  passengersPending: {
+    type: Array,
+    required: false,
+  },
   plate: {
     type: String,
     required: true,
@@ -67,6 +71,10 @@ const offerRide = new mongoose.Schema({
     type: String,
     required: true,
   },
+  // driver_id: {
+  //   type: String,
+  //   required: true,
+  // },
   // capacity: {
   //   type: Number,
   //   required: true,

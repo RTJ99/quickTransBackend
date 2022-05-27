@@ -2,7 +2,7 @@ const router = require("express").Router();
 const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const User = require("../models/user");
-
+const OfferRide = require("../models/offerRide");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -124,11 +124,33 @@ router.put("/:id", upload.single("image"), async (req, res) => {
     console.log(err);
   }
 });
-
+router.get("/last-ride/:id", async (req, res) => {
+  let user = await User.findById(req.params.id);
+  console.log(user, "user");
+  user = user.toObject();
+  let ride = await OfferRide.findById(user.rides[user.rides.length - 1]);
+  res.json(ride);
+});
+router.get("/next-ride/:id", async (req, res) => {
+  let user = await User.findById(req.params.id);
+  let ride = await OfferRide.findById(user.nextRide);
+  res.json({
+    ride,
+    status:
+      ride.passengers.filter((p) => p.id === req.params.id) > 0
+        ? "accepted"
+        : ride.status === "available"
+        ? "pending"
+        : "rejected",
+  });
+});
 router.get("/:id", async (req, res) => {
   try {
     // Find user by id
     let user = await User.findById(req.params.id);
+    let ride = await OfferRide.findById(user.nextRide);
+
+    // console.log(data);
     res.json(user);
   } catch (err) {
     console.log(err);

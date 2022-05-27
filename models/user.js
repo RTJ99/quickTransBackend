@@ -33,6 +33,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  nextRide: {
+    type: String,
+    required: false,
+  },
   cloudinary_id: {
     type: String,
     required: true,
