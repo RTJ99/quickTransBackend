@@ -10,6 +10,9 @@ const user = require('../models/user');
 
 router.post('/book', async (req, res) => {
   let offerRide = await OfferRide.findById(req.body.rideId);
+  if (offerRide.driver_id === req.body.userId) {
+    return;
+  }
   let seatsNeeded = req.body.seatsNeeded;
   let seatsTaken = offerRide.passengers.reduce(
     (acc, passenger) => acc + passenger.seats,
@@ -35,27 +38,31 @@ router.post('/book', async (req, res) => {
         message: 'You have already booked this ride',
       });
     } else {
-      offerRide.passengers.push({
-        id: req.body.userId,
-        seats: seatsNeeded,
-        status: 'pending',
-      });
-
-      const newOfferRide = await offerRide.save();
       const ridesss = {
         id: offerRide.id,
         to: offerRide.drop_off_location,
         from: offerRide.pickup_point,
         status: 'pending',
       };
+      console.log(req.body.userId, 'userrr id');
       const newUser = await user.findOneAndUpdate(
-        { id: req.body.userId },
+        { _id: req.body.userId },
         {
           $push: {
             booked_rides: ridesss,
           },
         }
       );
+
+      offerRide.passengers.push({
+        id: req.body.userId,
+        name: newUser.name,
+        picture: newUser.picture,
+        seats: seatsNeeded,
+        status: 'pending',
+      });
+
+      const newOfferRide = await offerRide.save();
       await newUser.save();
       res.json(newOfferRide);
     }
@@ -137,7 +144,7 @@ router.post('/unbook', async (req, res) => {
       ({ id }) => id !== userId
     );
     const newUser = await user.findOneAndUpdate(
-      { id: req.body.userId },
+      { _id: req.body.userId },
       {
         $push: {
           booked_rides: ridesss,
@@ -157,7 +164,7 @@ router.post('/unbook', async (req, res) => {
   res.json(offerRide);
 });
 router.post('/', upload.single('image'), async (req, res) => {
-  console.log('body', req.body);
+  const preferences = req.body.preferences.split(',');
   try {
     // Upload image to cloudinary
     const result = await cloudinary.uploader.upload(req.file.path);
@@ -172,7 +179,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       summary: req.body.summary,
       driver: req.body.driver,
       status: 'available',
-      preferences: req.body.preferences,
+      preferences: preferences,
       pickup_point: req.body.pickup_point,
       summary: req.body.summary,
       car: req.body.car,
@@ -199,7 +206,10 @@ router.post('/', upload.single('image'), async (req, res) => {
 
     console.log(x, 'Ride creater printed'); */
 
-    res.json(offerRide);
+    res.json({
+      data: createdride,
+      status: 200,
+    });
   } catch (err) {
     res.json({
       error: 'Something Went Wrong',
