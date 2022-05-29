@@ -1,9 +1,9 @@
-const router = require("express").Router();
-const cloudinary = require("../utils/cloudinary");
-const upload = require("../utils/multer");
-const Rating = require("../models/rating");
+const router = require('express').Router();
+const cloudinary = require('../utils/cloudinary');
+const upload = require('../utils/multer');
+const Rating = require('../models/rating');
 
-router.post("/", upload.single("image"), async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
   try {
     // Create new rating
     let rating = new Rating({
@@ -18,7 +18,7 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     let rating = await Rating.find();
     res.json(rating);
@@ -27,7 +27,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     // Find rating by id
     let rating = await Rating.findById(req.params.id);
@@ -39,7 +39,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.put("/:id", upload.single("image"), async (req, res) => {
+router.put('/:id', upload.single('image'), async (req, res) => {
   try {
     let rating = await Rating.findById(req.params.id);
 
@@ -56,7 +56,7 @@ router.put("/:id", upload.single("image"), async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     // Find rating by id
     let rating = await Rating.findById(req.params.id);
@@ -65,6 +65,5 @@ router.get("/:id", async (req, res) => {
     console.log(err);
   }
 });
-//coments
 
 module.exports = router;
