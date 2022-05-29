@@ -1,65 +1,93 @@
-const router = require("express").Router();
-const cloudinary = require("../utils/cloudinary");
-const upload = require("../utils/multer");
-const OfferRide = require("../models/offerRide");
-const multer = require("multer");
-const { find } = require("../models/offerRide");
-const User = require("../models/user");
+const router = require('express').Router();
+const cloudinary = require('../utils/cloudinary');
+const upload = require('../utils/multer');
+const OfferRide = require('../models/offerRide');
+const multer = require('multer');
+const { find } = require('../models/offerRide');
+const User = require('../models/user');
+const user = require('../models/user');
 // const offerRide = require("../models/offerRide");
 
-router.post("/book", async (req, res) => {
-  let offerRide = await OfferRide.findById(req.body.id);
-  let passengers = req.body.passengers;
-
+router.post('/book', async (req, res) => {
+  let offerRide = await OfferRide.findById(req.body.rideId);
+  let seatsNeeded = req.body.seatsNeeded;
   let seatsTaken = offerRide.passengers.reduce(
     (acc, passenger) => acc + passenger.seats,
     0
   );
+
   if (
-    offerRide.passengers.filter((passenger) => passenger.id === req.body.userId)
-      .length > 0
+    Number(offerRide.seats) - (Number(seatsTaken) + Number(seatsNeeded)) <
+    0
   ) {
-    return res.status(400).json({
-      message: "You have already booked this ride",
+    res.status(400).json({
+      message: 'Seats are full',
+      seatsLeft: Number(offerRide.seats) - Number(seatsTaken),
     });
+    return;
+  } else {
+    if (
+      offerRide.passengers.filter(
+        (passenger) => passenger.id === req.body.userId
+      ).length > 0
+    ) {
+      return res.status(400).json({
+        message: 'You have already booked this ride',
+      });
+    } else {
+      offerRide.passengers.push({
+        id: req.body.userId,
+        seats: seatsNeeded,
+        status: 'pending',
+      });
+
+      const newOfferRide = await offerRide.save();
+      const ridesss = {
+        id: offerRide.id,
+        to: offerRide.drop_off_location,
+        from: offerRide.pickup_point,
+        status: 'pending',
+      };
+      const newUser = await user.findOneAndUpdate(
+        { id: req.body.userId },
+        {
+          $push: {
+            booked_rides: ridesss,
+          },
+        }
+      );
+      await newUser.save();
+      res.json(newOfferRide);
+    }
   }
-  if (
+
+  /*   let seatsTaken = offerRide.passengers.reduce(
+    (acc, passenger) => acc + passenger.seats,
+    0
+  ); */
+
+  /*  if (
     offerRide.passengersPending.filter(
       (passenger) => passenger.id === req.body.userId
     ).length > 0
   ) {
     return res.status(400).json({
-      message: "You have already booked this ride",
+      message: 'You have already booked this ride',
     });
-  }
-  if (seatsTaken + passengers > offerRide.seats) {
-    res.status(400).json({ message: "Seats are full" });
+  } */
+  /*  if (seatsTaken + passengers > offerRide.seats) {
+    res.status(400).json({ message: 'Seats are full' });
     return;
   }
-  console.log(offerRide, "seats");
-
-  offerRide.passengersPending.push({
-    id: req.body.userId,
-    seats: passengers,
-  });
-
-  await offerRide.save();
-  User.findOne({ _id: req.body.userId }, async (err, user) => {
-    console.log(user, "user");
-    user.nextRide = offerRide._id;
-    await user.save();
-  });
-
-  await offerRide.save();
-
-  res.json(offerRide);
+  console.log(offerRide, 'seats'); */
 });
-router.post("/accept-ride", async (req, res) => {
+
+router.post('/accept-ride', async (req, res) => {
   let rideId = req.body.id;
   let offerRide = await OfferRide.findById(req.body.id);
   let userId = req.body.userId;
   if (offerRide.passengers.includes(userId)) {
-    res.status(400).json({ message: "You have already accepted this ride" });
+    res.status(400).json({ message: 'You have already accepted this ride' });
     return;
   }
 
@@ -72,7 +100,7 @@ router.post("/accept-ride", async (req, res) => {
   );
 
   if (seatsTaken + passenger.seats > offerRide.seats) {
-    res.status(400).json({ message: "Insufient Space" });
+    res.status(400).json({ message: 'Insufient Space' });
     return;
   }
 
@@ -84,36 +112,52 @@ router.post("/accept-ride", async (req, res) => {
 
   await offerRide.save();
 });
-router.post("/depart", async (req, res) => {
+router.post('/depart', async (req, res) => {
   let rideId = req.body.id;
   let offerRide = await OfferRide.findById(req.body.id);
-  offerRide.status = "departed";
+  offerRide.status = 'departed';
   await offerRide.save();
 });
 
-router.post("/unbook", async (req, res) => {
+router.post('/unbook', async (req, res) => {
   let userId = req.body.userId;
   let offerRide = await OfferRide.findById(req.body.id);
-  let checkAccepted =
-    offerRide.passengers.filter(({ id }) => id !== userId) > 0;
-  offerRide.passengers = offerRide.passengers.filter(
-    (id) => id !== req.body.passenger
+  console.log(offerRide.passengers);
+
+  let seatsTakenAccepted = offerRide.passengers.filter(
+    (item) => item.id === userId && item.status === 'accepted'
   );
-  if (checkAccepted) {
+
+  if (seatsTakenAccepted.length > 0) {
+    const Taken = seatsTakenAccepted.seats;
+    const newSeats = Number(offerRide.seats) + Number(Taken);
+
+    offerRide.seats = newSeats;
     offerRide.passengers = offerRide.passengers.filter(
       ({ id }) => id !== userId
     );
-  } else {
-    offerRide.passengersPending = offerRide.passengersPending.filter(
-      ({ id }) => id !== userId
+    const newUser = await user.findOneAndUpdate(
+      { id: req.body.userId },
+      {
+        $push: {
+          booked_rides: ridesss,
+        },
+      }
     );
+    await newUser.save();
   }
+
+  console.log(newSeats);
+
+  /* offerRide.passengers */
+  const x = offerRide.passengers.filter((item) => item.id === userId);
+  console.log(x);
+
   await offerRide.save();
   res.json(offerRide);
 });
-router.post("/", upload.single("image"), async (req, res) => {
-  console.log("body", req.body);
-
+router.post('/', upload.single('image'), async (req, res) => {
+  console.log('body', req.body);
   try {
     // Upload image to cloudinary
     const result = await cloudinary.uploader.upload(req.file.path);
@@ -127,7 +171,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       make: req.body.make,
       summary: req.body.summary,
       driver: req.body.driver,
-      status: "available",
+      status: 'available',
       preferences: req.body.preferences,
       pickup_point: req.body.pickup_point,
       summary: req.body.summary,
@@ -140,29 +184,34 @@ router.post("/", upload.single("image"), async (req, res) => {
       date: req.body.date,
       amount: req.body.amount,
       driver_pic: req.body.driver_pic,
-      // driver_id: req.body.driver_id,
+      driver_id: req.body.driver_id,
     });
 
-    console.log(req.body.driver_id, "kkkkkkkk");
+    console.log(req.body.driver_id, 'kkkkkkkk');
     // Save car
-    await offerRide.save();
-    let logedInUser = await User.findOneAndUpdate(
-      { name: req.body.driver },
-      { $push: { rides: offerRide } }
+    const createdride = await offerRide.save();
+    /*   let rideCreater = await user.findOneAndUpdate(
+      { id: req.body.driver },
+      { $push: { created_rides: createdride } }
     );
 
-    let staff = await logedInUser.save();
-    console.log(staff, "jjhhgjh");
+    const x = await rideCreater.save();
+
+    console.log(x, 'Ride creater printed'); */
 
     res.json(offerRide);
   } catch (err) {
+    res.json({
+      error: 'Something Went Wrong',
+      status: 500,
+    });
     console.log(err);
   }
 });
 
 // Create new offerRide
 
-router.get("/", async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     let offerRide = await OfferRide.find();
     res.json(offerRide);
@@ -171,7 +220,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/passengers", async (req, res) => {
+router.get('/passengers', async (req, res) => {
   try {
     let offerRide = await OfferRide.findById(req.query.id);
     let accepted = offerRide.passengers.map(
@@ -187,7 +236,7 @@ router.get("/passengers", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     // Find offerRide by id
     let offerRide = await OfferRide.findById(req.params.id);
@@ -201,7 +250,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.put("/:id", upload.single("image"), async (req, res) => {
+router.put('/:id', upload.single('image'), async (req, res) => {
   try {
     let offerRide = await OfferRide.findById(req.params.id);
     // Delete image from cloudinary
@@ -238,19 +287,29 @@ router.put("/:id", upload.single("image"), async (req, res) => {
   }
 });
 
-router.get("/search", async (req, res) => {
+router.get('/search', async (req, res) => {
   let { pickup_point, drop_off_location } = req.query;
   let data = await OfferRide.find({
     pickup_point,
     drop_off_location,
-    status: "available",
+    status: 'available',
   });
   res.send(data);
 });
-router.get("/:id", async (req, res) => {
+router.get('/rideby/:id', async (req, res) => {
   try {
     // Find offerRide by id
     let offerRide = await OfferRide.find({ driver_id: req.params.id });
+    res.json(offerRide);
+  } catch (err) {
+    console.log(err);
+  }
+});
+router.get('/getride/:id', async (req, res) => {
+  try {
+    console.log('fetching');
+    // Find offerRide by id
+    let offerRide = await OfferRide.find({ id: req.params.id });
     res.json(offerRide);
   } catch (err) {
     console.log(err);

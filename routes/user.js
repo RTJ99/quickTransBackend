@@ -1,14 +1,14 @@
-const router = require("express").Router();
-const cloudinary = require("../utils/cloudinary");
-const upload = require("../utils/multer");
-const User = require("../models/user");
-const OfferRide = require("../models/offerRide");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+const router = require('express').Router();
+const cloudinary = require('../utils/cloudinary');
+const upload = require('../utils/multer');
+const User = require('../models/user');
+const OfferRide = require('../models/offerRide');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
-require("dotenv").config();
+require('dotenv').config();
 
-router.post("/", upload.single("image"), async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
   try {
     // Upload image to cloudinary
     const result = await cloudinary.uploader.upload(req.file.path);
@@ -25,23 +25,23 @@ router.post("/", upload.single("image"), async (req, res) => {
       password: req.body.password,
       address: req.body.address,
     });
-    console.log(req.body, "body");
+    console.log(req.body, 'body');
     // Save user
 
     const userX = await user.save();
-    console.log(userX, "user");
+    console.log(userX, 'user');
     res.send(userX);
   } catch (err) {
     console.log(err);
   }
 });
-router.post("/login", async (req, res, next) => {
-  console.log("email", req.body);
+router.post('/login', async (req, res, next) => {
+  console.log('email', req.body);
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email: req.body.username });
-    console.log(user, "user");
+    console.log(user, 'user');
     if (user) {
       // const isPasswordCorrect = await bcrypt.compare(password, user.password);
       if (password === user.password) {
@@ -56,7 +56,7 @@ router.post("/login", async (req, res, next) => {
             picture: user.picture,
             id: user._id.toString(),
           },
-          "ryan"
+          'ryan'
         );
 
         console.log(token);
@@ -74,7 +74,7 @@ router.post("/login", async (req, res, next) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     let user = await User.find();
     res.json(user);
@@ -83,7 +83,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     // Find user by id
     let user = await User.findById(req.params.id);
@@ -97,7 +97,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.put("/:id", upload.single("image"), async (req, res) => {
+router.put('/:id', upload.single('image'), async (req, res) => {
   try {
     let user = await User.findById(req.params.id);
     // Delete image from cloudinary
@@ -124,31 +124,31 @@ router.put("/:id", upload.single("image"), async (req, res) => {
     console.log(err);
   }
 });
-router.get("/last-ride/:id", async (req, res) => {
+router.get('/last-ride/:id', async (req, res) => {
   let user = await User.findById(req.params.id);
-  console.log(user, "user");
+  console.log(user, 'user');
   user = user.toObject();
   let ride = await OfferRide.findById(user.rides[user.rides.length - 1]);
   res.json(ride);
 });
-router.get("/next-ride/:id", async (req, res) => {
+router.get('/next-ride/:id', async (req, res) => {
   let user = await User.findById(req.params.id);
   let ride = await OfferRide.findById(user.nextRide);
   res.json({
     ride,
     status:
       ride.passengers.filter((p) => p.id === req.params.id) > 0
-        ? "accepted"
-        : ride.status === "available"
-        ? "pending"
-        : "rejected",
+        ? 'accepted'
+        : ride.status === 'available'
+        ? 'pending'
+        : 'rejected',
   });
 });
-router.get("/:id", async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     // Find user by id
     let user = await User.findById(req.params.id);
-    let ride = await OfferRide.findById(user.nextRide);
+    /*  let ride = await OfferRide.findById(user.nextRide); */
 
     // console.log(data);
     res.json(user);

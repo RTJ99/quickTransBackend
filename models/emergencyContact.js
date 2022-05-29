@@ -1,15 +1,15 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const emergencyContact = new mongoose.Schema({
-  name: {
+  id: {
     type: String,
     required: true,
   },
 
-  phone: {
-    type: Number,
+  email: {
+    type: String,
     required: true,
   },
 });
 
-module.exports = mongoose.model("EmergencyContact", emergencyContact);
+module.exports = mongoose.model('EmergencyContact', emergencyContact);

@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -18,6 +18,14 @@ const userSchema = new mongoose.Schema({
     required: false,
   },
   pickup_points: {
+    type: Array,
+    required: false,
+  },
+  created_rides: {
+    type: Array,
+    required: false,
+  },
+  booked_rides: {
     type: Array,
     required: false,
   },
@@ -43,4 +51,4 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model('User', userSchema);

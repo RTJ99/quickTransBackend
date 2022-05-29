@@ -1,15 +1,15 @@
-const router = require("express").Router();
-const cloudinary = require("../utils/cloudinary");
-const upload = require("../utils/multer");
-const EmergencyContact = require("../models/emergencyContact");
+const router = require('express').Router();
+const cloudinary = require('../utils/cloudinary');
+const upload = require('../utils/multer');
+const EmergencyContact = require('../models/emergencyContact');
 
-router.post("/", upload.single("image"), async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
   try {
     // Create new emergencyContact
     let emergencyContact = new EmergencyContact({
-      name: req.body.name,
+      id: req.body.userId,
 
-      number: req.body.number,
+      email: req.body.email,
     });
     // Save emergencyContact
     await emergencyContact.save();
@@ -19,7 +19,7 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     let emergencyContact = await EmergencyContact.find();
     res.json(emergencyContact);
@@ -28,7 +28,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     // Find emergencyContact by id
     let emergencyContact = await EmergencyContact.findById(req.params.id);
@@ -40,7 +40,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.put("/:id", upload.single("image"), async (req, res) => {
+router.put('/:id', upload.single('image'), async (req, res) => {
   try {
     let emergencyContact = await EmergencyContact.findById(req.params.id);
 
@@ -62,7 +62,7 @@ router.put("/:id", upload.single("image"), async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     // Find emergencyContact by id
     let emergencyContact = await EmergencyContact.findById(req.params.id);

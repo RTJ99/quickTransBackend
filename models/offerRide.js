@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const offerRide = new mongoose.Schema({
   drop_off_location: {
@@ -91,6 +91,10 @@ const offerRide = new mongoose.Schema({
     type: String,
     required: true,
   },
+  driver_id: {
+    type: String,
+    required: true,
+  },
   picture: {
     type: String,
     required: true,
@@ -101,4 +105,4 @@ const offerRide = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("OfferRide", offerRide);
+module.exports = mongoose.model('OfferRide', offerRide);
