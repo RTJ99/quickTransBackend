@@ -90,34 +90,45 @@ router.post('/book', async (req, res) => {
 });
 
 router.post('/accept-ride', async (req, res) => {
+  console.log('rrrrrrr');
   let rideId = req.body.id;
-  let offerRide = await OfferRide.findById(req.body.id);
   let userId = req.body.userId;
-  if (offerRide.passengers.includes(userId)) {
-    res.status(400).json({ message: 'You have already accepted this ride' });
-    return;
-  }
+  let stat = req.body.status;
+  let offerRide = await OfferRide.findById(req.body.id);
+  let Userz = await user.findById(req.body.passengerid);
 
-  let passenger = offerRide.passengersPending.filter(
-    (passenger) => passenger.id === userId
-  )[0];
-
-  let seatsTaken = offerRide.passengers.reduce(
-    (acc, passenger) => acc + passenger.seats
-  );
-
-  if (seatsTaken + passenger.seats > offerRide.seats) {
-    res.status(400).json({ message: 'Insufient Space' });
-    return;
-  }
-
+  offerRide.passengers.forEach(async (passenger, index) => {
+    if (passenger.id == req.body.passengerid) {
+      passenger.status = stat;
+      offerRide.passengers[index] = passenger;
+      if (stat == 'accept') {
+        offerRide.seats = offerRide.seats - passenger.seats;
+      }
+      if (stat == 'reject') {
+        offerRide.passengers.splice(index, 1);
+      }
+      await offerRide.save();
+      Userz.booked_rides.forEach(async (ride, index) => {
+        if (ride.id == rideId) {
+          ride.status = stat;
+          Userz.booked_rides[index] = ride;
+          await Userz.save();
+        }
+      });
+    }
+    res.json({
+      status: 200,
+      message: 'done',
+    });
+  });
+  /*
   offerRide.passengers.push(passenger);
 
   offerRide.passengersPending = offerRide.passengersPending.filter(
     ({ id }) => id !== userId
   );
 
-  await offerRide.save();
+  await offerRide.save(); */
 });
 router.post('/depart', async (req, res) => {
   let rideId = req.body.id;
@@ -128,40 +139,44 @@ router.post('/depart', async (req, res) => {
 
 router.post('/unbook', async (req, res) => {
   let userId = req.body.userId;
+  let rideId = req.body.id;
   let offerRide = await OfferRide.findById(req.body.id);
-  console.log(offerRide.passengers);
 
   let seatsTakenAccepted = offerRide.passengers.filter(
-    (item) => item.id === userId && item.status === 'accepted'
+    (item) => item.id === userId && item.status === 'accept'
   );
-
   if (seatsTakenAccepted.length > 0) {
     const Taken = seatsTakenAccepted.seats;
     const newSeats = Number(offerRide.seats) + Number(Taken);
+    console.log(Taken);
 
     offerRide.seats = newSeats;
     offerRide.passengers = offerRide.passengers.filter(
       ({ id }) => id !== userId
     );
-    const newUser = await user.findOneAndUpdate(
-      { _id: req.body.userId },
-      {
-        $push: {
-          booked_rides: ridesss,
-        },
+    const user = await user.findById(req.body.userId);
+    user.booked_rides.forEach(async (item, index) => {
+      if (item.id == rideId) {
+        user.booked_rides.splice(index, 1);
+        await user.save();
       }
+    });
+    await offerRide.save();
+    res.json(offerRide);
+  } else {
+    offerRide.passengers = offerRide.passengers.filter(
+      ({ id }) => id !== userId
     );
-    await newUser.save();
+    const userx = await user.findById(req.body.userId);
+    userx.booked_rides.forEach(async (item, index) => {
+      if (item.id == rideId) {
+        userx.booked_rides.splice(index, 1);
+        await userx.save();
+      }
+    });
+    await offerRide.save();
+    res.json(offerRide);
   }
-
-  console.log(newSeats);
-
-  /* offerRide.passengers */
-  const x = offerRide.passengers.filter((item) => item.id === userId);
-  console.log(x);
-
-  await offerRide.save();
-  res.json(offerRide);
 });
 router.post('/', upload.single('image'), async (req, res) => {
   const preferences = req.body.preferences.split(',');
@@ -299,11 +314,14 @@ router.put('/:id', upload.single('image'), async (req, res) => {
 
 router.get('/search', async (req, res) => {
   let { pickup_point, drop_off_location } = req.query;
+  console.log(pickup_point);
+  console.log(drop_off_location);
   let data = await OfferRide.find({
-    pickup_point,
-    drop_off_location,
+    pickup_point: { $regex: pickup_point, $options: 'si' },
+    drop_off_location: { $regex: drop_off_location, $options: 'si' },
     status: 'available',
   });
+  console.log(data);
   res.send(data);
 });
 router.get('/rideby/:id', async (req, res) => {

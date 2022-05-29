@@ -1,9 +1,9 @@
-const router = require("express").Router();
-const cloudinary = require("../utils/cloudinary");
-const upload = require("../utils/multer");
-const SearchRide = require("../models/offerRide");
+const router = require('express').Router();
+const cloudinary = require('../utils/cloudinary');
+const upload = require('../utils/multer');
+const SearchRide = require('../models/offerRide');
 
-router.post("/", upload.single("image"), async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
   try {
     // Create new searchRide
     let searchRide = new SearchRide({
@@ -24,7 +24,7 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     let searchRide = await SearchRide.find();
     res.json(searchRide);
@@ -33,7 +33,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     // Find searchRide by id
     let searchRide = await SearchRide.findById(req.params.id);
@@ -45,7 +45,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.put("/:id", upload.single("image"), async (req, res) => {
+router.put('/:id', upload.single('image'), async (req, res) => {
   try {
     let searchRide = await SearchRide.findById(req.params.id);
 
@@ -68,7 +68,7 @@ router.put("/:id", upload.single("image"), async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     // Find searchRide by id
     let searchRide = await SearchRide.findById(req.params.id);
@@ -77,10 +77,17 @@ router.get("/:id", async (req, res) => {
     console.log(err);
   }
 });
-router.get("/search", async (req, res) => {
+router.get('/search', async (req, res) => {
+  console.log('kkkkkkkkkkkk');
   let { pickup_point, drop_off_location } = req.query;
-  let data = await SearchRide.find({ pickup_point, drop_off_location });
-  res.send(data);
+  let data = await SearchRide.find({
+    pickup_point: { $regex: req.query.pickup_point, $options: 'si' },
+    drop_off_location: { $regex: req.query.drop_off_location, $options: 'si' },
+  });
+  /*  console.log('kkkkkkkkkkkk')
+  let pickup_point = 'Neh';
+  let drop_off_location = 'Kag'; */
+  res.json(data);
 });
 
 module.exports = router;
