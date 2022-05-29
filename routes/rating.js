@@ -56,7 +56,7 @@ router.put('/:id', upload.single('image'), async (req, res) => {
   }
 });
 
-/* router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     // Find rating by id
     let rating = await Rating.findById(req.params.id);
@@ -64,6 +64,15 @@ router.put('/:id', upload.single('image'), async (req, res) => {
   } catch (err) {
     console.log(err);
   }
-}); */
+});
+router.get('/ll', async (req, res) => {
+  try {
+    // Find rating by id
+    let rating = await Rating.findById(req.params.id);
+    res.json(rating);
+  } catch (err) {
+    console.log(err);
+  }
+});
 
 module.exports = router;
