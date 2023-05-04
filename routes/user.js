@@ -75,10 +75,19 @@ router.post("/register", async (req, res) => {
 
     res.status(200).json({ message: "OTP sent to phone number" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server Error" });
+    if (err.name === "ValidationError") {
+      console.error("Validation Error:", err.message);
+      res.status(400).json({ message: "Validation Error", error: err.message });
+    } else if (err.name === "CastError") {
+      console.error("Cast Error:", err.message);
+      res.status(400).json({ message: "Cast Error", error: err.message });
+    } else {
+      console.error("Server Error:", err.message);
+      res.status(500).json({ message: "Server Error", error: err.message });
+    }
   }
 });
+
 router.post("/login", async (req, res, next) => {
   console.log("email", req.body);
   try {
