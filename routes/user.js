@@ -3,6 +3,7 @@ const cloudinary = require("../utils/cloudinary");
 const upload = require("../utils/multer");
 const User = require("../models/user");
 
+const twilio = require("twilio");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -33,6 +34,49 @@ router.post("/", upload.single("image"), async (req, res) => {
     res.send(userX);
   } catch (err) {
     console.log(err);
+  }
+});
+
+router.post("/register", async (req, res) => {
+  try {
+    const { name, email, phone, password, address } = req.body;
+
+    // Check if user already exists
+    const userExists = await User.findOne({ $or: [{ email }, { phone }] });
+    if (userExists) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Save user to database
+    const newUser = new User({
+      name,
+      email,
+      phone,
+      password,
+      address,
+      otp,
+      otpExpiration: Date.now() + 600000, // OTP expires after 10 minutes (600000 ms)
+    });
+    await newUser.save(); // Save user to MongoDB database
+
+    // Send OTP to user's phone number
+    const accountSid = "ACf0b4da57704e2d328913755956b05740";
+    const authToken = "85176977becf35ff73465d50cc76b3de";
+    const client = new twilio(accountSid, authToken);
+    const message = await client.messages.create({
+      body: `Your OTP for registration is: ${otp}`,
+      from: "+13204138039",
+      to: `+${phone}`,
+    });
+    console.log(message.sid);
+
+    res.status(200).json({ message: "OTP sent to phone number" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
   }
 });
 router.post("/login", async (req, res, next) => {

@@ -10,32 +10,25 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
   phone: {
-    type: Number,
+    type: String,
     required: true,
-  },
-  usuall_check_ins: {
-    type: Array,
-    required: false,
-  },
-  pickup_points: {
-    type: Array,
-    required: false,
   },
   password: {
     type: String,
-    required: false,
+    required: true,
   },
   address: {
     type: String,
     required: true,
   },
-  picture: {
+
+  otp: {
     type: String,
-    required: true,
+    required: false,
   },
-  cloudinary_id: {
-    type: String,
-    required: true,
+  otpExpiration: {
+    type: Date,
+    required: false,
   },
 });
 
