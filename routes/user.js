@@ -73,7 +73,7 @@ router.post("/register", async (req, res) => {
     client.messages
       .create({
         body: "Your Gift Ride OTP is " + otp,
-        from: "+13204138039",
+        from: "+13203613405",
         to: phone,
       })
       .then((message) => console.log(message.sid));
