@@ -64,8 +64,9 @@ router.post("/register", async (req, res) => {
     await newUser.save(); // Save user to MongoDB database
     console.log(newUser, "newUser");
     // Send OTP to user's phone number
-    const accountSid = "ACf0b4da57704e2d328913755956b05740";
-    const authToken = "282055c71629bd99cce32dacafd5188a";
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    console.log(accountSid, authToken, "accountSid, authToken");
     const client = require("twilio")(accountSid, authToken);
 
     // console.log(client, "client");
