@@ -4,22 +4,172 @@ const upload = require("../utils/multer");
 const OfferRide = require("../models/offerRide");
 const multer = require("multer");
 const { find } = require("../models/offerRide");
-// const offerRide = require("../models/offerRide");
+const User = require("../models/user");
 
 router.post("/book", async (req, res) => {
-  let offerRide = await OfferRide.findById(req.body.id);
-  console.log(offerRide, "seats");
-  if (offerRide.seats - 1 < 0) {
-    res.status(400).json({ message: "Seats are full" });
+  let offerRide = await OfferRide.findById(req.body.rideId);
+  if (offerRide.driver_id === req.body.userId) {
     return;
   }
-  offerRide.status = offerRide.seats - 1 === 0 ? "unavailable" : "available";
-  offerRide.seats = offerRide.seats - 1;
+  let seatsNeeded = req.body.seatsNeeded;
+  let seatsTaken = offerRide.passengers.reduce(
+    (acc, passenger) => acc + passenger.seats,
+    0
+  );
 
-  offerRide.passengers.push(req.body.passenger);
-  await offerRide.save();
-  res.json(offerRide);
+  if (
+    Number(offerRide.seats) - (Number(seatsTaken) + Number(seatsNeeded)) <
+    0
+  ) {
+    res.status(400).json({
+      message: "Seats are full",
+      seatsLeft: Number(offerRide.seats) - Number(seatsTaken),
+    });
+    return;
+  } else {
+    if (
+      offerRide.passengers.filter(
+        (passenger) => passenger.id === req.body.userId
+      ).length > 0
+    ) {
+      return res.status(400).json({
+        message: "You have already booked this ride",
+      });
+    } else {
+      const ridesss = {
+        id: offerRide.id,
+        to: offerRide.drop_off_location,
+        from: offerRide.pickup_point,
+        status: "pending",
+      };
+      console.log(req.body.userId, "userrr id");
+      const newUser = await User.findOneAndUpdate(
+        { _id: req.body.userId },
+        {
+          $push: {
+            booked_rides: ridesss,
+          },
+        }
+      );
+      console.log(ridesss, "ndiwo marides");
+
+      offerRide.passengers.push({
+        id: req.body.userId,
+        name: newUser.name,
+        picture: newUser.picture,
+        seats: seatsNeeded,
+        status: "pending",
+      });
+      console.log("pano tasvikawo");
+
+      const newOfferRide = await offerRide.save();
+      await newUser.save();
+      res.json(newOfferRide);
+    }
+  }
+
+  /*   let seatsTaken = offerRide.passengers.reduce(
+    (acc, passenger) => acc + passenger.seats,
+    0
+  ); */
+
+  /*  if (
+    offerRide.passengersPending.filter(
+      (passenger) => passenger.id === req.body.userId
+    ).length > 0
+  ) {
+    return res.status(400).json({
+      message: 'You have already booked this ride',
+    });
+  } */
+  /*  if (seatsTaken + passengers > offerRide.seats) {
+    res.status(400).json({ message: 'Seats are full' });
+    return;
+  }
+  console.log(offerRide, 'seats'); */
 });
+
+router.post("/accept-ride", async (req, res) => {
+  console.log("rrrrrrr");
+  console.log(req.body, "boyd ");
+  let rideId = req.body.id;
+  let userId = req.body.userId;
+  let stat = req.body.status;
+  let offerRide = await OfferRide.findById(req.body.id);
+  let Userz = await User.findById(req.body.passengerid);
+
+  offerRide.passengers.forEach(async (passenger, index) => {
+    if (passenger.id == req.body.passengerid) {
+      passenger.status = stat;
+      offerRide.passengers[index] = passenger;
+      if (stat == "accept") {
+        offerRide.seats = offerRide.seats - passenger.seats;
+      }
+      if (stat == "reject") {
+        offerRide.passengers.splice(index, 1);
+      }
+      await offerRide.save();
+      Userz.booked_rides.forEach(async (ride, index) => {
+        if (ride.id == rideId) {
+          ride.status = stat;
+          Userz.booked_rides[index] = ride;
+          await Userz.save();
+        }
+      });
+    }
+    res.send(offerRide);
+  });
+});
+router.get("/passengers", async (req, res) => {
+  try {
+    let offerRide = await OfferRide.findById(req.query.id);
+    let accepted = offerRide.passengers.map(
+      async ({ id }) => await User.findById(id)
+    );
+    let pending = offerRide.passengersPending.map(
+      async ({ id }) => await User.findById(id)
+    );
+    console.log(accepted, pending);
+    res.json({ accepted, pending });
+  } catch (err) {
+    console.log(err);
+  }
+});
+router.get("/rideby/:id", async (req, res) => {
+  console.log(req.params.id, "id yepa get");
+  try {
+    // Find offerRide by id
+    let offerRide = await OfferRide.find({ driver_id: req.params.id });
+    res.json(offerRide);
+  } catch (err) {
+    console.log(err);
+  }
+});
+router.get("/getride/:id", async (req, res) => {
+  try {
+    console.log("fetching");
+    // Find offerRide by id
+    let offerRide = await OfferRide.find({ id: req.params.id });
+    res.json(offerRide);
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+// router.post("/book", async (req, res) => {
+//   let offerRide = await OfferRide.findById(req.body.rideId);
+//   console.log(offerRide, "seats");
+//   if (offerRide.seats - 1 < 0) {
+//     res.status(400).json({ message: "Seats are full" });
+//     return;
+//   }
+//   offerRide.status = offerRide.seats - 1 === 0 ? "unavailable" : "available";
+//   offerRide.seats = offerRide.seats - 1;
+
+//   offerRide.passengers.push(req.body.passenger);
+//   await offerRide.save();
+//   res.json(offerRide);
+// });
 router.post("/unbook", async (req, res) => {
   let offerRide = await OfferRide.findById(req.body.id);
 
@@ -31,15 +181,12 @@ router.post("/unbook", async (req, res) => {
   await offerRide.save();
   res.json(offerRide);
 });
-router.post("/", upload.single("image"), async (req, res) => {
+router.post("/", async (req, res) => {
   console.log("body", req.body);
   try {
     // Upload image to cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path);
 
     let offerRide = new OfferRide({
-      picture: result.secure_url,
-      cloudinary_id: result.public_id,
       capacity: req.body.capacity,
       seats: req.body.seats,
       plate: req.body.plate,
@@ -47,7 +194,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       summary: req.body.summary,
       driver: req.body.driver,
       status: "available",
-      preferences: req.body.preferences,
+
       pickup_point: req.body.pickup_point,
       summary: req.body.summary,
       car: req.body.car,
@@ -58,7 +205,6 @@ router.post("/", upload.single("image"), async (req, res) => {
       dropOffLng: req.body.dropOffLng,
       date: req.body.date,
       amount: req.body.amount,
-      driver_pic: req.body.driver_pic,
     });
 
     // Save car
@@ -66,6 +212,33 @@ router.post("/", upload.single("image"), async (req, res) => {
     res.json(offerRide);
   } catch (err) {
     console.log(err);
+  }
+});
+router.get("/booked-rides/:userId", async (req, res) => {
+  try {
+    const userId = req.query.userId;
+    const bookedRides = await OfferRide.find({
+      "passengers.passengerId": userId,
+    });
+    res.json(bookedRides);
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+router.get("/:driverid", async (req, res) => {
+  try {
+    // Get driverId from request headers or query string
+    const driverId = req.query.driverid;
+
+    // Fetch rides created by the driver
+    const rides = await OfferRide.find({ driver_id: driverId });
+
+    // Send the rides as a response
+    res.json(rides);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Error fetching rides" });
   }
 });
 
@@ -133,11 +306,14 @@ router.put("/:id", upload.single("image"), async (req, res) => {
 
 router.get("/search", async (req, res) => {
   let { pickup_point, drop_off_location } = req.query;
+  console.log(pickup_point);
+  console.log(drop_off_location);
   let data = await OfferRide.find({
-    pickup_point,
-    drop_off_location,
+    pickup_point: { $regex: pickup_point, $options: "si" },
+    drop_off_location: { $regex: drop_off_location, $options: "si" },
     status: "available",
   });
+  console.log(data);
   res.send(data);
 });
 router.get("/:id", async (req, res) => {

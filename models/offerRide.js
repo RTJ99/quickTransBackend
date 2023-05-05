@@ -32,7 +32,7 @@ const offerRide = new mongoose.Schema({
 
   amount: {
     type: String,
-    required: true,
+    required: false,
   },
 
   dropOffLat: {
@@ -67,10 +67,10 @@ const offerRide = new mongoose.Schema({
     type: String,
     required: true,
   },
-  // capacity: {
-  //   type: Number,
-  //   required: true,
-  // },
+  capacity: {
+    type: Number,
+    required: true,
+  },
   summary: {
     type: String,
     required: false,
@@ -79,18 +79,18 @@ const offerRide = new mongoose.Schema({
     type: String,
     required: true,
   },
-  driver_pic: {
-    type: String,
-    required: true,
-  },
-  picture: {
-    type: String,
-    required: true,
-  },
-  cloudinary_id: {
-    type: String,
-    required: true,
-  },
+  // driver_pic: {
+  //   type: String,
+  //   required: true,
+  // },
+  // picture: {
+  //   type: String,
+  //   required: true,
+  // },
+  // cloudinary_id: {
+  //   type: String,
+  //   required: true,
+  // },
 });
 
 module.exports = mongoose.model("OfferRide", offerRide);

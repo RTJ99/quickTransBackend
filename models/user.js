@@ -21,6 +21,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  booked_rides: {
+    type: Array,
+    required: false,
+  },
+  created_rides: {
+    type: Array,
+    required: false,
+  },
 
   otp: {
     type: String,

@@ -40,16 +40,17 @@ router.post("/", upload.single("image"), async (req, res) => {
 router.post("/register", async (req, res) => {
   try {
     const { name, email, phone, password, address } = req.body;
+    console.log("tirikusvika pano");
 
-    // Check if user already exists
-    const userExists = await User.findOne({ $or: [{ email }, { phone }] });
+    const userExists = await User.findOne({ $or: [{ email }] });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
+    console.log("tirikusvika pano futi heyi");
 
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
+    console.log(otp, "otp");
     // Save user to database
     const newUser = new User({
       name,
@@ -61,17 +62,20 @@ router.post("/register", async (req, res) => {
       otpExpiration: Date.now() + 600000, // OTP expires after 10 minutes (600000 ms)
     });
     await newUser.save(); // Save user to MongoDB database
-
+    console.log(newUser, "newUser");
     // Send OTP to user's phone number
     const accountSid = "ACf0b4da57704e2d328913755956b05740";
-    const authToken = "85176977becf35ff73465d50cc76b3de";
-    const client = new twilio(accountSid, authToken);
-    const message = await client.messages.create({
-      body: `Your OTP for registration is: ${otp}`,
-      from: "+13204138039",
-      to: `+${phone}`,
-    });
-    console.log(message.sid);
+    const authToken = "282055c71629bd99cce32dacafd5188a";
+    const client = require("twilio")(accountSid, authToken);
+
+    // console.log(client, "client");
+    client.messages
+      .create({
+        body: "Your Gift Ride OTP is " + otp,
+        from: "+13204138039",
+        to: phone,
+      })
+      .then((message) => console.log(message.sid));
 
     res.status(200).json({ message: "OTP sent to phone number" });
   } catch (err) {
@@ -87,43 +91,62 @@ router.post("/register", async (req, res) => {
     }
   }
 });
-
-router.post("/login", async (req, res, next) => {
-  console.log("email", req.body);
+// OTP verification route
+router.post("/verify-otp", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { phone, otp } = req.body;
 
-    const user = await User.findOne({ email: req.body.username });
-    console.log(user, "user");
-    if (user) {
-      // const isPasswordCorrect = await bcrypt.compare(password, user.password);
-      if (password === user.password) {
-        const token = jwt.sign(
-          {
-            email: user.email,
-            name: user.name,
-            phone: user.phone,
-            ussuall_checkins: user.ussuall_check_ins,
-            pickup_points: user.pickup_points,
-            address: user.address,
-            picture: user.picture,
-            id: user._id.toString(),
-          },
-          "ryan"
-        );
-
-        console.log(token);
-        return res.json({ token });
-      }
-      const error = new Error(`Password does not match email ${email}`);
-      error.statusCode = 401;
-      throw error;
+    // Find user by phone number and OTP
+    const user = await User.findOne({ phone, otp });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid OTP" });
     }
-    const error = new Error(`This email ${email} does not exist`);
-    error.statusCode = 401;
-    throw error;
+
+    // Check if OTP has expired
+    if (Date.now() > user.otpExpiration) {
+      return res.status(400).json({ message: "OTP has expired" });
+    }
+
+    // Update user's verification status
+    user.isVerified = true;
+    await user.save();
+
+    res.status(200).json({ message: "OTP verified successfully" });
   } catch (err) {
-    next(err);
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  console.log(req.body, "body");
+
+  try {
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Compare passwords
+    if (user.password !== password) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, username: user.name },
+      "mysecretkey",
+      {
+        expiresIn: "7h",
+      }
+    );
+
+    res.status(200).json({ message: "Login successful", token });
+  } catch (err) {
+    console.error("Server Error:", err.message);
+    res.status(500).json({ message: "Server Error", error: err.message });
   }
 });
 
@@ -179,6 +202,7 @@ router.put("/:id", upload.single("image"), async (req, res) => {
 });
 
 router.get("/:id", async (req, res) => {
+  console.log(req.params.id, "id");
   try {
     // Find user by id
     let user = await User.findById(req.params.id);
